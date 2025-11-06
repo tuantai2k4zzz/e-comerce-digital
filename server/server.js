@@ -2,13 +2,16 @@ const express = require("express");
 require('dotenv').config()
 const dbConnect = require("./config/dbconnect");
 const userRoutes = require("./routes");
+const cookieParser = require('cookie-parser')
 
 const app = express();
 const port = process.env.PORT || 8888;
+app.use(cookieParser())
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 dbConnect();
 userRoutes(app);
+
 
 
 
