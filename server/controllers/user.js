@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const asyncHandler = require("express-async-handler");
 const {generateAccessToken, generateRefreshToken} = require('../middlewares/jwt')
+const jwt = require('jsonwebtoken')
 
 const register = asyncHandler(async (req, res) => {
     const {fistname, lastname, email, mobile, password} =req.body
@@ -61,9 +62,47 @@ const getCurrent = asyncHandler(async (req, res) => {
     
 })
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    // Lấy token từ cookie
+    const cookie = req.cookies
+    // Check xem có token hay không
+    if(!cookie && !cookie.refreshToken) throw new Error('No refreshToken in cookie!')
+        // Check token có hợp lệ hay không
+
+    const rs = jwt.verify(cookie.refreshAccessToken, process.env.JWT_SECRET)
+    const response = await User.findOne({_id: decode._id, refreshToken: cookie.refreshToken})
+        return res.status(200).json({
+            success: response ? true : false,
+            newAccessToken: response ? generateAccessToken(response._id, response.role) : 'Can not generate new access token'
+    })
+    // jwt.verify(cookie.refreshToken, process.env.JWT_SECRET, async (err, decode) => {
+    //     if (err) throw new Error('Invalid refresh token')
+    //     // Check xem token có khớp với token đã lưu trong db hay không
+    //     const response = await User.findOne({_id: decode._id, refreshToken: cookie.refreshToken})
+    //     return res.status(200).json({
+    //         success: response ? true : false,
+    //         newAccessToken: response ? generateAccessToken(response._id, response.role) : 'Can not generate new access token'
+    //     })
+    // })
+})
+
+const logout = asyncHandler(async (req, res) => {
+    const cookie = req.cookies
+    if(!cookie || !cookie.refreshToken) throw new Error('No refreshToken in cookie!')
+    await User.findOneAndUpdate({refreshToken: cookie.refreshToken}, {refreshToken: ''}, {new: true})
+    res.clearCookie('refreshToken', {httpOnly: true, secure: true})
+    return res.status(200).json({
+        success: true,
+        mes: 'Logout successfully!'
+    })
+})
+
 
 module.exports = {
     register,
     login,
-    getCurrent
+    getCurrent,
+    refreshAccessToken,
+    logout
+
 }
